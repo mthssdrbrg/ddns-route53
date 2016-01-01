@@ -47,7 +47,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     *)
-      echo "Unkown option: $key = $2"
+      echo "Unkown option: $key"
       exit 1
       ;;
   esac
