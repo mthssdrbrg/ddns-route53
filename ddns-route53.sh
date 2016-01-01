@@ -25,11 +25,39 @@ function valid_ip()
   return $stat
 }
 
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case "$key" in
+    -z|--zone)
+      ZONE_ID="$2"
+      shift
+      shift
+      ;;
+    -z=*|--zone=*)
+      ZONE_ID="${key#*=}"
+      shift
+      ;;
+    -r|--record-set)
+      RECORD_SET="$2"
+      shift
+      shift
+      ;;
+    -r=*|--record-set=*)
+      RECORD_SET="${key#*=}"
+      shift
+      ;;
+    *)
+      echo "Unkown option: $key = $2"
+      exit 1
+      ;;
+  esac
+done
+
 if [[ -z $ZONE_ID ]]; then
-  echo "Missing \$ZONE_ID"
+  echo "Missing -z | --zone | \$ZONE_ID"
   exit 1
 elif [[ -z $RECORD_SET ]]; then
-  echo "Missing \$RECORD_SET"
+  echo "Missing -r | --record-set | \$RECORD_SET"
   exit 1
 fi
 
