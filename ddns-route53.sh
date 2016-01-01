@@ -28,12 +28,12 @@ function valid_ip()
 while [[ $# -gt 0 ]]; do
   key="$1"
   case "$key" in
-    -z|--zone)
+    -z|--zone-id)
       ZONE_ID="$2"
       shift
       shift
       ;;
-    -z=*|--zone=*)
+    -z=*|--zone-id=*)
       ZONE_ID="${key#*=}"
       shift
       ;;
@@ -54,7 +54,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z $ZONE_ID ]]; then
-  echo "Missing -z | --zone | \$ZONE_ID"
+  echo "Missing -z | --zone-id | \$ZONE_ID"
   exit 1
 elif [[ -z $RECORD_SET ]]; then
   echo "Missing -r | --record-set | \$RECORD_SET"
