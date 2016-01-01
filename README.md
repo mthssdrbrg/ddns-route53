@@ -9,10 +9,15 @@ rather than hardcoded variables in the script.
 ## Installation
 
 ```bash
-# Download the latest script using your preferred tool, if command-line:
-curl -s https://raw.githubusercontent.com/mthssdrbrg/ddns-route53/master/ddns-route53.sh -O
-wget -q https://raw.githubusercontent.com/mthssdrbrg/ddns-route53/master/ddns-route53.sh
-# If you want to download it to some other directory:
-curl -s https://raw.githubusercontent.com/mthssdrbrg/ddns-route53/master/ddns-route53.sh -o /tmp/ddns-route53.sh
-wget -q https://raw.githubusercontent.com/mthssdrbrg/ddns-route53/master/ddns-route53.sh -O /tmp/ddns-route53.sh
+curl -sO https://raw.githubusercontent.com/mthssdrbrg/ddns-route53/master/ddns-route53.sh
 ```
+
+## Usage
+
+```bash
+ddns-route53.sh --zone-id=ZONE_ID --record-set=RECORD_SET
+```
+
+It's also possible to use short options `-z` and `-r` (with or without equal
+sign) if preferable, or by setting the `ZONE_ID` and `RECORD_SET` environment
+variables.
