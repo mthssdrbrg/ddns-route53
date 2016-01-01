@@ -61,6 +61,10 @@ elif [[ -z $RECORD_SET ]]; then
   exit 1
 fi
 
+if [[ -d $LOG_DIR ]]; then
+  mkdir -p "$LOG_DIR"
+fi
+
 if ! valid_ip "$IP"; then
   echo "Invalid \$IP address: $IP" >> "$LOG_FILE"
   exit 1
