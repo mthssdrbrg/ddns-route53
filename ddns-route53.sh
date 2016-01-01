@@ -7,7 +7,7 @@ TYPE="A"
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 LOG_DIR="${LOG_DIR:-/var/log/ddns-route53}"
 LOG_FILE="$LOG_DIR/ddns-route53.log"
-IP_FILE="$LOG_DIR/ip.log"
+IP_FILE="$LOG_DIR/ip.state"
 # Sanity check for fetched IP addres
 function valid_ip()
 {
