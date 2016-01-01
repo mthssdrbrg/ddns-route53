@@ -1,16 +1,14 @@
 #!/bin/bash
-# The Time-To-Live of this recordset
+# TTL for record set
 TTL=${TTL:-300}
-# Change this if you want
 COMMENT="Updated at $(date +"%Y%m%d%H%M%S")"
 # Change to AAAA if using an IPv6 address
 TYPE="A"
-# Get current IP
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 LOG_DIR="${LOG_DIR:-/var/log/ddns-route53}"
 LOG_FILE="$LOG_DIR/ddns-route53.log"
 IP_FILE="$LOG_DIR/ip.log"
-
+# Sanity check for fetched IP addres
 function valid_ip()
 {
   local ip=$1
@@ -27,21 +25,21 @@ function valid_ip()
   return $stat
 }
 
-if [[ -z "$ZONE_ID" ]]; then
+if [[ -z $ZONE_ID ]]; then
   echo "Missing \$ZONE_ID"
   exit 1
-elif [[ -z "$RECORD_SET" ]]; then
+elif [[ -z $RECORD_SET ]]; then
   echo "Missing \$RECORD_SET"
   exit 1
 fi
 
 if ! valid_ip "$IP"; then
-  echo "Invalid IP address: $IP" >> "$LOG_FILE"
+  echo "Invalid \$IP address: $IP" >> "$LOG_FILE"
   exit 1
 fi
 
 if grep -Fxq "$IP" "$IP_FILE"; then
-  echo "IP is still $IP, exiting" >> "$LOG_FILE"
+  echo "IP is still == $IP, exiting" >> "$LOG_FILE"
   exit 0
 else
   echo "IP has changed to $IP, updating" >> "$LOG_FILE"
