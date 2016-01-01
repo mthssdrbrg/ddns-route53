@@ -71,7 +71,7 @@ if ! valid_ip "$IP"; then
 fi
 
 if grep -Fxq "$IP" "$IP_FILE"; then
-  echo "IP is still == $IP, exiting" >> "$LOG_FILE"
+  echo "Current IP == $IP, exiting" >> "$LOG_FILE"
   exit 0
 else
   echo "IP has changed to $IP, updating" >> "$LOG_FILE"
