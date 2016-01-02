@@ -1,23 +1,45 @@
 # ddns-route53
 
-Simple bash script for rolling one's own Dynamic DNS updater using AWS Route53.
+[![Build Status](https://travis-ci.org/mthssdrbrg/ddns-route53.svg?branch=master)](https://travis-ci.org/mthssdrbrg/ddns-route53)
+
+Simple dynamic DNS updater script using Amazon Route53.
 
 Source is originally from [Roll your own dynamic DNS service using Amazon Route53](https://willwarren.com/2014/07/03/roll-dynamic-dns-service-using-amazon-route53)
-though it's been slightly modified to use OpenDNS and uses environment variables
-rather than hardcoded variables in the script.
+though it's been modified to use OpenDNS for getting the current IP address, as
+well as usage of command line arguments and environment variables.
+
+## Requirements
+
+* `bash`
+* `awscli`
+* `dig`
 
 ## Installation
 
-```bash
-curl -sO https://raw.githubusercontent.com/mthssdrbrg/ddns-route53/master/ddns-route53.sh
+```shell
+curl -sLO https://github.com/mthssdrbrg/ddns-route53/raw/master/ddns-route53
 ```
 
 ## Usage
 
-```bash
-ddns-route53.sh --zone-id=ZONE_ID --record-set=RECORD_SET
+```shell
+$ ddns-route53 --zone-id=ZONE_ID --record-set=RECORD_SET
 ```
 
-It's also possible to use short options `-z` and `-r` (with or without equal
-sign) if preferable, or by setting the `ZONE_ID` and `RECORD_SET` environment
+The above command assumes that the necessary environment variables for `awscli`
+are set, an A type record, a TTL of 300 seconds and it will use
+`/var/log/ddns-route53` for storing logs and state.
+
+See `$ ddns-route53 --help` for more usage information.
+
+It's possible to set a number of environment variables instead of using command
+line arguments, though command line arguments take precedence over environment
 variables.
+
+* `DDNS_ROUTE53_TTL`: TTL for DNS record.
+* `DDNS_ROUTE53_TYPE`: DNS record type.
+* `DDNS_ROUTE53_LOG_DIR`: directory to store logs and state.
+* `DDNS_ROUTE53_COMMENT`: comment set when updating the Route53 record (only
+  configurable as environment variable).
+* `DDNS_ROUTE53_ZONE_ID`: Amazon Route53 hosted zone ID.
+* `DDNS_ROUTE53_RECORD_SET`: Amazon Route53 record set name.

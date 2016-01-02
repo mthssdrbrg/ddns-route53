@@ -1,0 +1,190 @@
+#!/bin/bash
+
+DATE_FORMAT="%Y-%m-%d %H:%M:%S"
+TTL=${DDNS_ROUTE53_TTL:-300}
+TYPE="${DDNS_ROUTE53_TYPE:-A}"
+COMMENT="${DDNS_ROUTE53_COMMENT:-Updated at $(date +"$DATE_FORMAT")}"
+LOG_DIR="${DDNS_ROUTE53_LOG_DIR:-/var/log/ddns-route53}"
+ZONE_ID="$DDNS_ROUTE53_ZONE_ID"
+RECORD_SET="$DDNS_ROUTE53_RECORD_SET"
+
+function errcho() {
+  >&2 echo "$@"
+}
+
+function wlog() {
+  echo "[$(date +"$DATE_FORMAT")]: $*" >> "$LOG_FILE"
+}
+
+function usage() {
+  cat <<HELP
+Usage: $(basename "$0") [OPTIONS]
+
+Dynamic DNS updater using Amazon Route53.
+
+Options:
+  -z, --zone-id=ZONE_ID         Amazon Route53 hosted zone ID (required)
+  -r, --record-set=RECORD_SET   Amazon Route53 record set name (required)
+  -t, --ttl=SECONDS             TTL for DNS record
+  -y, --type=A_AAAA             DNS record type (A or AAAA)
+  -l, --log-dir=PATH            Directory to store logs and state
+  -i, --ip=IP_ADDRESS           Force usage of IP address
+  -h, --help                    You're looking at it
+HELP
+}
+
+function valid_ip() {
+  local ip=$1
+  local stat=1
+  if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+      OIFS=$IFS
+      IFS='.'
+      ip=($ip)
+      IFS=$OIFS
+      [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+          && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+      stat=$?
+  fi
+  return $stat
+}
+
+function validate-arguments() {
+  if [[ -z $ZONE_ID ]]; then
+    errcho "Missing -z | --zone-id | \$ZONE_ID"
+    exit 1
+  elif [[ -z $RECORD_SET ]]; then
+    errcho "Missing -r | --record-set | \$RECORD_SET"
+    exit 1
+  elif [[ -z $IP ]]; then
+    IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
+  fi
+}
+
+function setup-logging() {
+  LOG_FILE="$LOG_DIR/ddns-route53.log"
+  IP_FILE="$LOG_DIR/ip"
+  if [ ! -d "$LOG_DIR" ]; then
+    if ! mkdir -p "$LOG_DIR" 2> /dev/null; then
+      errcho "Failed to create log directory $LOG_DIR"
+      exit 1
+    fi
+  fi
+}
+
+function validate-ip() {
+  if ! valid_ip "$IP"; then
+    wlog "Invalid IP address: $IP"
+    exit 1
+  fi
+}
+
+function maybe-update() {
+  if grep -Fxq "$IP" "$IP_FILE" 2> /dev/null; then
+    wlog "Current IP == $IP, exiting"
+    exit 0
+  else
+    wlog "IP has changed to $IP, updating"
+    TMP_FILE=$(mktemp -t ddns-route53.XXXXXXXX)
+    cat > "$TMP_FILE" << EOF
+    {
+      "Comment": "$COMMENT",
+      "Changes": [
+        {
+          "Action": "UPSERT",
+          "ResourceRecordSet": {
+            "ResourceRecords": [
+              {"Value": "$IP"}
+            ],
+            "Name": "$RECORD_SET",
+            "Type": "$TYPE",
+            "TTL": $TTL
+          }
+        }
+      ]
+    }
+EOF
+
+    output=$(aws route53 change-resource-record-sets --hosted-zone-id "$ZONE_ID" --change-batch "file://$TMP_FILE" 2>&1)
+    success=$?
+    wlog "$output"
+    if [ $success -eq 0 ]; then
+      echo "$IP" > "$IP_FILE"
+    fi
+    rm "$TMP_FILE"
+  fi
+}
+
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case "$key" in
+    -z|--zone-id|--zone-id=*)
+      if [ -z "${key##--zone-id=*}" ]; then
+        ZONE_ID="${key#*=}"
+      else
+        ZONE_ID="$2"
+        shift
+      fi
+      shift
+      ;;
+    -r|--record-set|--record-set=*)
+      if [ -z "${key##--record-set=*}" ]; then
+        RECORD_SET="${key#*=}"
+      else
+        RECORD_SET="$2"
+        shift
+      fi
+      shift
+      ;;
+    -l|--log-dir|--log-dir=*)
+      if [ -z "${key##--log-dir=*}" ]; then
+        LOG_DIR="${key#*=}"
+      else
+        LOG_DIR="$2"
+        shift
+      fi
+      shift
+      ;;
+    -i|--ip|--ip=*)
+      if [ -z "${key##--ip=*}" ]; then
+        IP="${key#*=}"
+      else
+        IP="$2"
+        shift
+      fi
+      shift
+      ;;
+    -t|--ttl|--ttl=*)
+      if [ -z "${key##--ttl=*}" ]; then
+        TTL="${key#*=}"
+      else
+        TTL="$2"
+        shift
+      fi
+      shift
+      ;;
+    -y|--type|--type=*)
+      if [ -z "${key##--type=*}" ]; then
+        TYPE="${key#*=}"
+      else
+        TYPE="$2"
+        shift
+      fi
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unkown option: $key"
+      exit 1
+      ;;
+  esac
+done
+
+validate-arguments
+setup-logging
+validate-ip
+maybe-update
+
+exit 0
