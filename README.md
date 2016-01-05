@@ -42,3 +42,9 @@ variables.
   configurable as environment variable).
 * `DDNS_ROUTE53_ZONE_ID`: Amazon Route53 hosted zone ID.
 * `DDNS_ROUTE53_RECORD_SET`: Amazon Route53 record set name.
+
+## Copyright
+
+This is free and unencumbered software released into the public domain.
+
+See LICENSE.txt or [unlicense.org](http://unlicense.org) for more information.
