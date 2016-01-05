@@ -12,7 +12,6 @@ well as usage of command line arguments and environment variables.
 
 * `bash`
 * `awscli`
-* `dig`
 
 ## Installation
 
@@ -27,10 +26,10 @@ $ ddns-route53 --zone-id=ZONE_ID --record-set=RECORD_SET
 ```
 
 The above command assumes that the necessary environment variables for `awscli`
-are set, an A type record, a TTL of 300 seconds and it will use
+are set, an A type record, a TTL of 300 seconds and will use
 `/var/log/ddns-route53` for storing logs and state.
 
-See `$ ddns-route53 --help` for more usage information.
+See `ddns-route53 --help` for more information about command line arguments.
 
 It's possible to set a number of environment variables instead of using command
 line arguments, though command line arguments take precedence over environment
