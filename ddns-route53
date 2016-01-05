@@ -50,10 +50,10 @@ function valid_ip() {
 
 function validate-arguments() {
   if [[ -z $ZONE_ID ]]; then
-    errcho "Missing -z | --zone-id | \$ZONE_ID"
+    errcho "Missing -z | --zone-id | \$DDNS_ROUTE53_ZONE_ID"
     exit 1
   elif [[ -z $RECORD_SET ]]; then
-    errcho "Missing -r | --record-set | \$RECORD_SET"
+    errcho "Missing -r | --record-set | \$DDNS_ROUTE53_RECORD_SET"
     exit 1
   elif [[ -z $IP ]]; then
     IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
