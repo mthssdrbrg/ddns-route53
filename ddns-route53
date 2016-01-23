@@ -7,6 +7,7 @@ COMMENT="${DDNS_ROUTE53_COMMENT:-Updated at $(date +"$DATE_FORMAT")}"
 LOG_DIR="${DDNS_ROUTE53_LOG_DIR:-/var/log/ddns-route53}"
 ZONE_ID="$DDNS_ROUTE53_ZONE_ID"
 RECORD_SET="$DDNS_ROUTE53_RECORD_SET"
+VERSION="1.0.0.pre0"
 
 function errcho() {
   >&2 echo "$@"
@@ -30,6 +31,7 @@ Options:
   -l, --log-dir=PATH            Directory to store logs and state
   -i, --ip=IP_ADDRESS           Force usage of IP address
   -h, --help                    You're looking at it
+  -v, --version                 Print version and exit
 HELP
 }
 
@@ -173,6 +175,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -h|--help)
       usage
+      exit 0
+      ;;
+    -v|--version)
+      echo "$VERSION"
       exit 0
       ;;
     *)
