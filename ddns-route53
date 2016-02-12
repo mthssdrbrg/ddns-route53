@@ -117,61 +117,48 @@ EOF
 }
 
 while [[ $# -gt 0 ]]; do
-  key="$1"
-  case "$key" in
-    -z|--zone-id|--zone-id=*)
-      if [ -z "${key##--zone-id=*}" ]; then
-        ZONE_ID="${key#*=}"
-      else
-        ZONE_ID="$2"
-        shift
-      fi
+  case "$1" in
+    -z|--zone-id)
+      ZONE_ID="$2"
       shift
       ;;
-    -r|--record-set|--record-set=*)
-      if [ -z "${key##--record-set=*}" ]; then
-        RECORD_SET="${key#*=}"
-      else
-        RECORD_SET="$2"
-        shift
-      fi
+    --zone-id=?*)
+      ZONE_ID="${1#*=}"
+      ;;
+    -r|--record-set)
+      RECORD_SET="$2"
       shift
       ;;
-    -l|--log-dir|--log-dir=*)
-      if [ -z "${key##--log-dir=*}" ]; then
-        LOG_DIR="${key#*=}"
-      else
-        LOG_DIR="$2"
-        shift
-      fi
+    --record-set=?*)
+      RECORD_SET="${1#*=}"
+      ;;
+    -l|--log-dir)
+      LOG_DIR="$2"
       shift
       ;;
-    -i|--ip|--ip=*)
-      if [ -z "${key##--ip=*}" ]; then
-        IP="${key#*=}"
-      else
-        IP="$2"
-        shift
-      fi
+    --log-dir=?*)
+      LOG_DIR="${1#*=}"
+      ;;
+    -i|--ip)
+      IP="$2"
       shift
       ;;
-    -t|--ttl|--ttl=*)
-      if [ -z "${key##--ttl=*}" ]; then
-        TTL="${key#*=}"
-      else
-        TTL="$2"
-        shift
-      fi
+    --ip=?*)
+      IP="${1#*=}"
+      ;;
+    -t|--ttl)
+      TTL="$2"
       shift
       ;;
-    -y|--type|--type=*)
-      if [ -z "${key##--type=*}" ]; then
-        TYPE="${key#*=}"
-      else
-        TYPE="$2"
-        shift
-      fi
+    --ttl=?*)
+      TTL="${1#*=}"
+      ;;
+    -y|--type)
+      TYPE="$2"
       shift
+      ;;
+    --type=?*)
+      TYPE="${1#*=}"
       ;;
     -h|--help)
       usage
@@ -182,11 +169,12 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      echo -e "Unkown option: $key\n"
+      echo -e "Unkown option: $1\n"
       usage
       exit 1
       ;;
   esac
+  shift
 done
 
 validate-arguments
