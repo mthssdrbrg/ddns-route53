@@ -57,8 +57,6 @@ function validate-arguments() {
   elif [[ -z $RECORD_SET ]]; then
     errcho "Missing -r | --record-set | \$DDNS_ROUTE53_RECORD_SET"
     exit 1
-  elif [[ -z $IP ]]; then
-    IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
   fi
 }
 
@@ -74,6 +72,9 @@ function setup-logging() {
 }
 
 function validate-ip() {
+  if [[ -z $IP ]]; then
+    IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
+  fi
   if ! valid_ip "$IP"; then
     wlog "Invalid IP address: $IP"
     exit 1
