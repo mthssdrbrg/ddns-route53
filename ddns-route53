@@ -11,8 +11,8 @@ declare record_set="$DDNS_ROUTE53_RECORD_SET"
 declare handler_script="$DDNS_ROUTE53_SCRIPT"
 declare old_ip ip
 
-function errcho() {
-  >&2 echo "$@"
+function errlog() {
+  echo "$@" >&2
 }
 
 function log() {
@@ -54,7 +54,7 @@ function setup-state() {
   state_dir="$(dirname $STATE_PATH)"
   if [[ ! -d "$state_dir" ]]; then
     if ! mkdir "$state_dir" 2> /dev/null; then
-      errcho "Failed to create state directory '$state_dir'"
+      errlog "Failed to create state directory '$state_dir'"
       return 1
     fi
   fi
@@ -77,7 +77,7 @@ function init-args() {
       --ttl=?*) ttl="${1#*=}" ;;
       --type=?*) record_type="${1#*=}" ;;
       --script=?*) handler_script="${1#*=}" ;;
-      *) errcho "Unkown option: $1"; usage; exit 1;;
+      *) errlog "Unkown option: $1"; usage; exit 1;;
     esac
     shift
   done
@@ -89,13 +89,13 @@ function init-args() {
 
 function validate-args() {
   if [[ -z "$zone_id" ]]; then
-    errcho "Missing -z | --zone-id | \$DDNS_ROUTE53_ZONE_ID"
+    errlog "Missing -z | --zone-id | \$DDNS_ROUTE53_ZONE_ID"
     return 1
   elif [[ -z "$record_set" ]]; then
-    errcho "Missing -r | --record-set | \$DDNS_ROUTE53_RECORD_SET"
+    errlog "Missing -r | --record-set | \$DDNS_ROUTE53_RECORD_SET"
     return 1
   elif [[ -n "$handler_script" && ! -x "$handler_script" ]]; then
-    errcho "Script at '$handler_script' is not executable"
+    errlog "Script at '$handler_script' is not executable"
     return 1
   fi
 }
