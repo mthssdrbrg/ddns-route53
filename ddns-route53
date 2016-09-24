@@ -1,21 +1,23 @@
 #!/bin/bash
 
-DATE_FORMAT="%Y-%m-%d %H:%M:%S"
-TTL=${DDNS_ROUTE53_TTL:-300}
-TYPE="${DDNS_ROUTE53_TYPE:-A}"
-COMMENT="${DDNS_ROUTE53_COMMENT:-Updated at $(date +"$DATE_FORMAT")}"
-LOG_DIR="${DDNS_ROUTE53_LOG_DIR:-/var/log/ddns-route53}"
-ZONE_ID="$DDNS_ROUTE53_ZONE_ID"
-RECORD_SET="$DDNS_ROUTE53_RECORD_SET"
-HANDLER_SCRIPT="$DDNS_ROUTE53_SCRIPT"
-VERSION="1.0.1"
+declare -r DATE_FORMAT="%Y-%m-%d %H:%M:%S"
+declare -r VERSION="1.0.1"
+declare ttl=${DDNS_ROUTE53_TTL:-300}
+declare record_type="${DDNS_ROUTE53_TYPE:-A}"
+declare comment="${DDNS_ROUTE53_COMMENT:-Updated at $(date +"$DATE_FORMAT")}"
+declare log_dir="${DDNS_ROUTE53_LOG_DIR:-/var/log/ddns-route53}"
+declare zone_id="$DDNS_ROUTE53_ZONE_ID"
+declare record_set="$DDNS_ROUTE53_RECORD_SET"
+declare handler_script="$DDNS_ROUTE53_SCRIPT"
+declare log_file
+declare ip_file
 
 function errcho() {
   >&2 echo "$@"
 }
 
 function wlog() {
-  echo "[$(date +"$DATE_FORMAT")]: $*" >> "$LOG_FILE"
+  echo "[$(date +"$DATE_FORMAT")]: $*" >> "$log_file"
 }
 
 function usage() {
@@ -37,173 +39,142 @@ Options:
 HELP
 }
 
-function valid_ip() {
-  local ip=$1
-  local stat=1
+function valid-ip() {
+  local ip result octets
+  ip=$1
+  result=1
   if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
       OIFS=$IFS
       IFS='.'
-      ip=($ip)
+      octets=($ip)
       IFS=$OIFS
-      [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
-          && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
-      stat=$?
+      [[ ${octets[0]} -le 255 && ${octets[1]} -le 255 \
+          && ${octets[2]} -le 255 && ${octets[3]} -le 255 ]]
+      result=$?
   fi
-  return $stat
+  return $result
 }
 
 function validate-arguments() {
-  if [[ -z $ZONE_ID ]]; then
+  if [[ -z $zone_id ]]; then
     errcho "Missing -z | --zone-id | \$DDNS_ROUTE53_ZONE_ID"
     exit 1
-  elif [[ -z $RECORD_SET ]]; then
+  elif [[ -z $record_set ]]; then
     errcho "Missing -r | --record-set | \$DDNS_ROUTE53_RECORD_SET"
     exit 1
   fi
-  if [[ -n "$HANDLER_SCRIPT" && ! -x "$HANDLER_SCRIPT" ]]; then
-    errcho "Script at '$HANDLER_SCRIPT' is not executable"
+  if [[ -n "$handler_script" && ! -x "$handler_script" ]]; then
+    errcho "Script at '$handler_script' is not executable"
     exit 1
   fi
 }
 
 function setup-logging() {
-  LOG_FILE="$LOG_DIR/ddns-route53.log"
-  IP_FILE="$LOG_DIR/ip"
-  if [ ! -d "$LOG_DIR" ]; then
-    if ! mkdir -p "$LOG_DIR" 2> /dev/null; then
-      errcho "Failed to create log directory $LOG_DIR"
+  log_file="$log_dir/ddns-route53.log"
+  ip_file="$log_dir/ip"
+  if [ ! -d "$log_dir" ]; then
+    if ! mkdir -p "$log_dir" 2> /dev/null; then
+      errcho "Failed to create log directory $log_dir"
       exit 1
     fi
   fi
 }
 
 function validate-ip() {
-  if [[ -z $IP ]]; then
-    IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
+  if [[ -z $ip ]]; then
+    ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
   fi
-  if ! valid_ip "$IP"; then
-    wlog "Invalid IP address: $IP"
+  if ! valid-ip "$ip"; then
+    wlog "Invalid IP address: $ip"
     exit 1
   fi
 }
 
 function maybe-update() {
-  if grep -Fxq "$IP" "$IP_FILE" 2> /dev/null; then
-    wlog "Current IP == $IP, exiting"
+  if grep -Fxq "$ip" "$ip_file" 2> /dev/null; then
+    wlog "Current IP == $ip, exiting"
     exit 0
   else
-    OLD_IP="$(cat "$IP_FILE" 2> /dev/null)"
-    wlog "IP has changed from $OLD_IP to $IP, updating"
-    TMP_FILE=$(mktemp -t ddns-route53.XXXXXXXX)
-    cat > "$TMP_FILE" << EOF
+    local tmp_file old_ip output success
+    old_ip="$(cat "$ip_file" 2> /dev/null)"
+    tmp_file=$(mktemp -t ddns-route53.XXXXXXXX)
+    wlog "IP has changed from $old_ip to $ip, updating"
+    cat > "$tmp_file" << EOF
     {
-      "Comment": "$COMMENT",
+      "Comment": "$comment",
       "Changes": [
         {
           "Action": "UPSERT",
           "ResourceRecordSet": {
             "ResourceRecords": [
-              {"Value": "$IP"}
+              {"Value": "$ip"}
             ],
-            "Name": "$RECORD_SET",
-            "Type": "$TYPE",
-            "TTL": $TTL
+            "Name": "$record_set",
+            "Type": "$record_type",
+            "TTL": $ttl
           }
         }
       ]
     }
 EOF
 
-    output=$(aws route53 change-resource-record-sets --hosted-zone-id "$ZONE_ID" --change-batch "file://$TMP_FILE" 2>&1)
+    output=$(aws route53 change-resource-record-sets --hosted-zone-id "$zone_id" --change-batch "file://$tmp_file" 2>&1)
     success=$?
     wlog "$output"
     if [ $success -eq 0 ]; then
-      echo "$IP" > "$IP_FILE"
+      echo "$ip" > "$ip_file"
     fi
-    rm "$TMP_FILE"
-    maybe-run-handler "$OLD_IP" "$IP"
+    rm "$tmp_file"
+    maybe-run-handler "$old_ip" "$ip"
   fi
 }
 
 function maybe-run-handler() {
-  if [[ -n "$HANDLER_SCRIPT" ]]; then
-    local old_ip=$1
-    local new_ip=$2
-    "$HANDLER_SCRIPT" "$old_ip" "$new_ip"
+  if [[ -n "$handler_script" ]]; then
+    local old_ip new_ip
+    old_ip=$1
+    new_ip=$2
+    "$handler_script" "$old_ip" "$new_ip"
   fi
 }
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    -z|--zone-id)
-      ZONE_ID="$2"
-      shift
-      ;;
-    --zone-id=?*)
-      ZONE_ID="${1#*=}"
-      ;;
-    -r|--record-set)
-      RECORD_SET="$2"
-      shift
-      ;;
-    --record-set=?*)
-      RECORD_SET="${1#*=}"
-      ;;
-    -l|--log-dir)
-      LOG_DIR="$2"
-      shift
-      ;;
-    --log-dir=?*)
-      LOG_DIR="${1#*=}"
-      ;;
-    -i|--ip)
-      IP="$2"
-      shift
-      ;;
-    --ip=?*)
-      IP="${1#*=}"
-      ;;
-    -t|--ttl)
-      TTL="$2"
-      shift
-      ;;
-    --ttl=?*)
-      TTL="${1#*=}"
-      ;;
-    -y|--type)
-      TYPE="$2"
-      shift
-      ;;
-    --type=?*)
-      TYPE="${1#*=}"
-      ;;
-    -s|--script)
-      HANDLER_SCRIPT="$2"
-      shift
-      ;;
-    --script=?*)
-      HANDLER_SCRIPT="${1#*=}"
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    -v|--version)
-      echo "$VERSION"
-      exit 0
-      ;;
-    *)
-      echo -e "Unkown option: $1\n"
-      usage
-      exit 1
-      ;;
-  esac
-  shift
-done
+function parse-argv() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -z|--zone-id) zone_id="$2"; shift ;;
+      -r|--record-set) record_set="$2"; shift ;;
+      -l|--log-dir) log_dir="$2"; shift ;;
+      -i|--ip) ip="$2"; shift ;;
+      -t|--ttl) ttl="$2"; shift ;;
+      -y|--type) record_type="$2"; shift ;;
+      -s|--script) handler_script="$2"; shift ;;
+      -h|--help) usage; exit 0 ;;
+      -v|--version) echo "$VERSION"; exit 0;;
+      --zone-id=?*) zone_id="${1#*=}" ;;
+      --record-set=?*) record_set="${1#*=}" ;;
+      --log-dir=?*) log_dir="${1#*=}"; shift ;;
+      --ip=?*) ip="${1#*=}" ;;
+      --ttl=?*) ttl="${1#*=}" ;;
+      --type=?*) record_type="${1#*=}" ;;
+      --script=?*) handler_script="${1#*=}" ;;
+      *)
+        echo "Unkown option: $1"
+        usage
+        exit 1
+        ;;
+    esac
+    shift
+  done
+}
 
-validate-arguments
-setup-logging
-validate-ip
-maybe-update
+function main() {
+  parse-argv "$@"
+  validate-arguments
+  setup-logging
+  validate-ip
+  maybe-update
+}
+
+main "$@"
 
 exit 0
