@@ -89,6 +89,9 @@ function validate-args() {
   elif [[ -n "$handler_script" && ! -x "$handler_script" ]]; then
     errlog "Script at '$handler_script' is not executable"
     return 1
+  elif [[ -z "$ip" ]]; then
+    errlog "Unable to determine current IP address"
+    return 1
   fi
 }
 
