@@ -139,65 +139,24 @@ function maybe-run-handler() {
 function parse-argv() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      -z|--zone-id)
-        zone_id="$2"
-        shift
-        ;;
-      --zone-id=?*)
-        zone_id="${1#*=}"
-        ;;
-      -r|--record-set)
-        record_set="$2"
-        shift
-        ;;
-      --record-set=?*)
-        record_set="${1#*=}"
-        ;;
-      -l|--log-dir)
-        log_dir="$2"
-        shift
-        ;;
-      --log-dir=?*)
-        log_dir="${1#*=}"
-        ;;
-      -i|--ip)
-        ip="$2"
-        shift
-        ;;
-      --ip=?*)
-        ip="${1#*=}"
-        ;;
-      -t|--ttl)
-        ttl="$2"
-        shift
-        ;;
-      --ttl=?*)
-        ttl="${1#*=}"
-        ;;
-      -y|--type)
-        type="$2"
-        shift
-        ;;
-      --type=?*)
-        type="${1#*=}"
-        ;;
-      -s|--script)
-        handler_script="$2"
-        shift
-        ;;
-      --script=?*)
-        handler_script="${1#*=}"
-        ;;
-      -h|--help)
-        usage
-        exit 0
-        ;;
-      -v|--version)
-        echo "$VERSION"
-        exit 0
-        ;;
+      -z|--zone-id) zone_id="$2"; shift ;;
+      -r|--record-set) record_set="$2"; shift ;;
+      -l|--log-dir) log_dir="$2"; shift ;;
+      -i|--ip) ip="$2"; shift ;;
+      -t|--ttl) ttl="$2"; shift ;;
+      -y|--type) type="$2"; shift ;;
+      -s|--script) handler_script="$2"; shift ;;
+      -h|--help) usage; exit 0 ;;
+      -v|--version) echo "$VERSION"; exit 0;;
+      --zone-id=?*) zone_id="${1#*=}" ;;
+      --record-set=?*) record_set="${1#*=}" ;;
+      --log-dir=?*) log_dir="${1#*=}"; shift ;;
+      --ip=?*) ip="${1#*=}" ;;
+      --ttl=?*) ttl="${1#*=}" ;;
+      --type=?*) type="${1#*=}" ;;
+      --script=?*) handler_script="${1#*=}" ;;
       *)
-        echo -e "Unkown option: $1\n"
+        echo "Unkown option: $1"
         usage
         exit 1
         ;;
