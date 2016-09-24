@@ -69,12 +69,6 @@ function init-args() {
       -s|--script) handler_script="$2"; shift ;;
       -h|--help) usage; exit 0 ;;
       -v|--version) echo "$VERSION"; exit 0;;
-      --zone-id=?*) zone_id="${1#*=}" ;;
-      --record-set=?*) record_set="${1#*=}" ;;
-      --ip=?*) ip="${1#*=}" ;;
-      --ttl=?*) ttl="${1#*=}" ;;
-      --type=?*) record_type="${1#*=}" ;;
-      --script=?*) handler_script="${1#*=}" ;;
       *) errlog "Unkown option: $1"; usage; exit 1;;
     esac
     shift
