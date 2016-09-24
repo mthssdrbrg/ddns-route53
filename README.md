@@ -42,6 +42,7 @@ variables.
   configurable as environment variable).
 * `DDNS_ROUTE53_ZONE_ID`: Amazon Route53 hosted zone ID.
 * `DDNS_ROUTE53_RECORD_SET`: Amazon Route53 record set name.
+* `DDNS_ROUTE53_SCRIPT`: path to script to execute on changes.
 
 ## Copyright
 

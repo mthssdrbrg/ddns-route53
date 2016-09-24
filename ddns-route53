@@ -7,6 +7,7 @@ COMMENT="${DDNS_ROUTE53_COMMENT:-Updated at $(date +"$DATE_FORMAT")}"
 LOG_DIR="${DDNS_ROUTE53_LOG_DIR:-/var/log/ddns-route53}"
 ZONE_ID="$DDNS_ROUTE53_ZONE_ID"
 RECORD_SET="$DDNS_ROUTE53_RECORD_SET"
+HANDLER_SCRIPT="$DDNS_ROUTE53_SCRIPT"
 VERSION="1.0.1"
 
 function errcho() {
@@ -30,6 +31,7 @@ Options:
   -y, --type=A_AAAA             DNS record type (A or AAAA)
   -l, --log-dir=PATH            Directory to store logs and state
   -i, --ip=IP_ADDRESS           Force usage of IP address
+  -s, --script=PATH             Path to script to execute on change
   -h, --help                    You're looking at it
   -v, --version                 Print version and exit
 HELP
@@ -56,6 +58,10 @@ function validate-arguments() {
     exit 1
   elif [[ -z $RECORD_SET ]]; then
     errcho "Missing -r | --record-set | \$DDNS_ROUTE53_RECORD_SET"
+    exit 1
+  fi
+  if [[ -n "$HANDLER_SCRIPT" && ! -x "$HANDLER_SCRIPT" ]]; then
+    errcho "Script at '$HANDLER_SCRIPT' is not executable"
     exit 1
   fi
 }
@@ -86,7 +92,8 @@ function maybe-update() {
     wlog "Current IP == $IP, exiting"
     exit 0
   else
-    wlog "IP has changed to $IP, updating"
+    OLD_IP="$(cat "$IP_FILE" 2> /dev/null)"
+    wlog "IP has changed from $OLD_IP to $IP, updating"
     TMP_FILE=$(mktemp -t ddns-route53.XXXXXXXX)
     cat > "$TMP_FILE" << EOF
     {
@@ -114,6 +121,15 @@ EOF
       echo "$IP" > "$IP_FILE"
     fi
     rm "$TMP_FILE"
+    maybe-run-handler "$OLD_IP" "$IP"
+  fi
+}
+
+function maybe-run-handler() {
+  if [[ -n "$HANDLER_SCRIPT" ]]; then
+    local old_ip=$1
+    local new_ip=$2
+    "$HANDLER_SCRIPT" "$old_ip" "$new_ip"
   fi
 }
 
@@ -160,6 +176,13 @@ while [[ $# -gt 0 ]]; do
       ;;
     --type=?*)
       TYPE="${1#*=}"
+      ;;
+    -s|--script)
+      HANDLER_SCRIPT="$2"
+      shift
+      ;;
+    --script=?*)
+      HANDLER_SCRIPT="${1#*=}"
       ;;
     -h|--help)
       usage
