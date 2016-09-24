@@ -99,33 +99,29 @@ function validate-args() {
 }
 
 function update-dns-entry() {
-  local ip=$1 tmp_file output success
-  tmp_file=$(mktemp -t ddns-route53.XXXXXXXX)
-  cat > "$tmp_file" << EOF
-  {
-    "Comment": "$comment",
-    "Changes": [
-      {
-        "Action": "UPSERT",
-        "ResourceRecordSet": {
-          "ResourceRecords": [
-            {"Value": "$ip"}
-          ],
-          "Name": "$record_set",
-          "Type": "$record_type",
-          "TTL": $ttl
-        }
+  local ip=$1 output success batch
+  read -r -d '' batch << EOF
+{
+  "Comment": "$comment",
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "ResourceRecords": [{"Value": "$ip"}],
+        "Name": "$record_set",
+        "Type": "$record_type",
+        "TTL": $ttl
       }
-    ]
-  }
+    }
+  ]
+}
 EOF
-  output=$(aws route53 change-resource-record-sets --hosted-zone-id "$zone_id" --change-batch "file://$tmp_file" 2>&1)
+  output=$(aws route53 change-resource-record-sets --hosted-zone-id "$zone_id" --change-batch "$batch" 2>&1)
   success=$?
   log "$output"
   if (( success == 0 )); then
     echo "$ip" > "$STATE_PATH"
   fi
-  rm -f "$tmp_file"
 }
 
 function run-handler-script() {
