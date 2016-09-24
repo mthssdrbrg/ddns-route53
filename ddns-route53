@@ -1,14 +1,14 @@
 #!/bin/bash
 
-DATE_FORMAT="%Y-%m-%d %H:%M:%S"
-TTL=${DDNS_ROUTE53_TTL:-300}
-TYPE="${DDNS_ROUTE53_TYPE:-A}"
-COMMENT="${DDNS_ROUTE53_COMMENT:-Updated at $(date +"$DATE_FORMAT")}"
-LOG_DIR="${DDNS_ROUTE53_LOG_DIR:-/var/log/ddns-route53}"
-ZONE_ID="$DDNS_ROUTE53_ZONE_ID"
-RECORD_SET="$DDNS_ROUTE53_RECORD_SET"
-HANDLER_SCRIPT="$DDNS_ROUTE53_SCRIPT"
-VERSION="1.0.1"
+declare TTL=${DDNS_ROUTE53_TTL:-300}
+declare TYPE="${DDNS_ROUTE53_TYPE:-A}"
+declare COMMENT="${DDNS_ROUTE53_COMMENT:-Updated at $(date +"$DATE_FORMAT")}"
+declare LOG_DIR="${DDNS_ROUTE53_LOG_DIR:-/var/log/ddns-route53}"
+declare ZONE_ID="$DDNS_ROUTE53_ZONE_ID"
+declare RECORD_SET="$DDNS_ROUTE53_RECORD_SET"
+declare HANDLER_SCRIPT="$DDNS_ROUTE53_SCRIPT"
+declare -r DATE_FORMAT="%Y-%m-%d %H:%M:%S"
+declare -r VERSION="1.0.1"
 
 function errcho() {
   >&2 echo "$@"
