@@ -74,7 +74,7 @@ function init-args() {
     shift
   done
   if [[ -z "$ip" ]]; then
-    ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+    ip="$(dig +short myip.opendns.com @resolver1.opendns.com)"
   fi
   old_ip="$(cat $STATE_PATH 2> /dev/null)"
 }
@@ -110,7 +110,7 @@ function update-dns-entry() {
   ]
 }
 EOF
-  output=$(aws route53 change-resource-record-sets --hosted-zone-id "$zone_id" --change-batch "$batch" 2>&1)
+  output="$(aws route53 change-resource-record-sets --hosted-zone-id "$zone_id" --change-batch "$batch" 2>&1)"
   success=$?
   if (( success == 0 )); then
     log "$output"
