@@ -6,19 +6,17 @@ declare -r STATE_DIR="/var/lib/ddns-route53"
 declare ttl=${DDNS_ROUTE53_TTL:-300}
 declare record_type="${DDNS_ROUTE53_TYPE:-A}"
 declare comment="${DDNS_ROUTE53_COMMENT:-Updated at $(date +"$DATE_FORMAT")}"
-declare log_dir="${DDNS_ROUTE53_LOG_DIR:-/var/log/ddns-route53}"
 declare zone_id="$DDNS_ROUTE53_ZONE_ID"
 declare record_set="$DDNS_ROUTE53_RECORD_SET"
 declare handler_script="$DDNS_ROUTE53_SCRIPT"
-declare log_file
 declare state
 
 function errcho() {
   >&2 echo "$@"
 }
 
-function wlog() {
-  echo "[$(date +"$DATE_FORMAT")]: $*" >> "$log_file"
+function log() {
+  echo "$@"
 }
 
 function usage() {
@@ -32,7 +30,6 @@ Options:
   -r, --record-set=RECORD_SET   Amazon Route53 record set name (required)
   -t, --ttl=SECONDS             TTL for DNS record
   -y, --type=A_AAAA             DNS record type (A or AAAA)
-  -l, --log-dir=PATH            Directory to store logs and state
   -i, --ip=IP_ADDRESS           Force usage of IP address
   -s, --script=PATH             Path to script to execute on change
   -h, --help                    You're looking at it
@@ -80,35 +77,25 @@ function setup-state() {
   state="$STATE_DIR/ip"
 }
 
-function setup-logging() {
-  log_file="$log_dir/ddns-route53.log"
-  if [ ! -d "$log_dir" ]; then
-    if ! mkdir -p "$log_dir" 2> /dev/null; then
-      errcho "Failed to create log directory $log_dir"
-      exit 1
-    fi
-  fi
-}
-
 function validate-ip() {
   if [[ -z $ip ]]; then
     ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
   fi
   if ! valid-ip "$ip"; then
-    wlog "Invalid IP address: $ip"
+    log "Invalid IP address: $ip"
     exit 1
   fi
 }
 
 function maybe-update() {
   if grep -Fxq "$ip" "$state" 2> /dev/null; then
-    wlog "Current IP == $ip, exiting"
+    log "Current IP == $ip, exiting"
     exit 0
   else
     local tmp_file old_ip output success
     old_ip="$(cat "$state" 2> /dev/null)"
     tmp_file=$(mktemp -t ddns-route53.XXXXXXXX)
-    wlog "IP has changed from $old_ip to $ip, updating"
+    log "IP has changed from $old_ip to $ip, updating"
     cat > "$tmp_file" << EOF
     {
       "Comment": "$comment",
@@ -130,7 +117,7 @@ EOF
 
     output=$(aws route53 change-resource-record-sets --hosted-zone-id "$zone_id" --change-batch "file://$tmp_file" 2>&1)
     success=$?
-    wlog "$output"
+    log "$output"
     if [ $success -eq 0 ]; then
       echo "$ip" > "$state"
     fi
@@ -153,7 +140,6 @@ function parse-argv() {
     case "$1" in
       -z|--zone-id) zone_id="$2"; shift ;;
       -r|--record-set) record_set="$2"; shift ;;
-      -l|--log-dir) log_dir="$2"; shift ;;
       -i|--ip) ip="$2"; shift ;;
       -t|--ttl) ttl="$2"; shift ;;
       -y|--type) record_type="$2"; shift ;;
@@ -162,7 +148,6 @@ function parse-argv() {
       -v|--version) echo "$VERSION"; exit 0;;
       --zone-id=?*) zone_id="${1#*=}" ;;
       --record-set=?*) record_set="${1#*=}" ;;
-      --log-dir=?*) log_dir="${1#*=}"; shift ;;
       --ip=?*) ip="${1#*=}" ;;
       --ttl=?*) ttl="${1#*=}" ;;
       --type=?*) record_type="${1#*=}" ;;
@@ -181,7 +166,6 @@ function main() {
   parse-argv "$@"
   validate-arguments
   setup-state
-  setup-logging
   validate-ip
   maybe-update
 }
