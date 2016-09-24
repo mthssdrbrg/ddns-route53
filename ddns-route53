@@ -29,7 +29,7 @@ Options:
   -z, --zone-id=ZONE_ID         Amazon Route53 hosted zone ID (required)
   -r, --record-set=RECORD_SET   Amazon Route53 record set name (required)
   -t, --ttl=SECONDS             TTL for DNS record
-  -y, --type=A_AAAA             DNS record type (A or AAAA)
+  -y, --type=A                  DNS record type
   -i, --ip=IP_ADDRESS           Force usage of IP address
   -s, --script=PATH             Path to script to execute on change
   -h, --help                    You're looking at it
