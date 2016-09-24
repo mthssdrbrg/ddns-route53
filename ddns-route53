@@ -87,10 +87,10 @@ function init-args() {
 
 function validate-args() {
   if [[ -z "$zone_id" ]]; then
-    errlog "Missing -z | --zone-id | \$DDNS_ROUTE53_ZONE_ID"
+    errlog "Missing -z or --zone-id or \$DDNS_ROUTE53_ZONE_ID"
     return 1
   elif [[ -z "$record_set" ]]; then
-    errlog "Missing -r | --record-set | \$DDNS_ROUTE53_RECORD_SET"
+    errlog "Missing -r or --record-set or \$DDNS_ROUTE53_RECORD_SET"
     return 1
   elif [[ -n "$handler_script" && ! -x "$handler_script" ]]; then
     errlog "Script at '$handler_script' is not executable"
