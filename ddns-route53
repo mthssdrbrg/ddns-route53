@@ -3,7 +3,7 @@
 declare -r DATE_FORMAT="%Y-%m-%d %H:%M:%S"
 declare -r VERSION="1.0.1"
 declare ttl=${DDNS_ROUTE53_TTL:-300}
-declare type="${DDNS_ROUTE53_TYPE:-A}"
+declare record_type="${DDNS_ROUTE53_TYPE:-A}"
 declare comment="${DDNS_ROUTE53_COMMENT:-Updated at $(date +"$DATE_FORMAT")}"
 declare log_dir="${DDNS_ROUTE53_LOG_DIR:-/var/log/ddns-route53}"
 declare zone_id="$DDNS_ROUTE53_ZONE_ID"
@@ -110,7 +110,7 @@ function maybe-update() {
               {"Value": "$ip"}
             ],
             "Name": "$record_set",
-            "Type": "$type",
+            "Type": "$record_type",
             "TTL": $ttl
           }
         }
@@ -146,7 +146,7 @@ function parse-argv() {
       -l|--log-dir) log_dir="$2"; shift ;;
       -i|--ip) ip="$2"; shift ;;
       -t|--ttl) ttl="$2"; shift ;;
-      -y|--type) type="$2"; shift ;;
+      -y|--type) record_type="$2"; shift ;;
       -s|--script) handler_script="$2"; shift ;;
       -h|--help) usage; exit 0 ;;
       -v|--version) echo "$VERSION"; exit 0;;
@@ -155,7 +155,7 @@ function parse-argv() {
       --log-dir=?*) log_dir="${1#*=}"; shift ;;
       --ip=?*) ip="${1#*=}" ;;
       --ttl=?*) ttl="${1#*=}" ;;
-      --type=?*) type="${1#*=}" ;;
+      --type=?*) record_type="${1#*=}" ;;
       --script=?*) handler_script="${1#*=}" ;;
       *)
         echo "Unkown option: $1"
