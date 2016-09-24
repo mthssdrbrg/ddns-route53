@@ -39,7 +39,7 @@ Options:
 HELP
 }
 
-function valid_ip() {
+function valid-ip() {
   local ip=$1
   local stat=1 octets
   if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
@@ -83,7 +83,7 @@ function validate-ip() {
   if [[ -z $ip ]]; then
     ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
   fi
-  if ! valid_ip "$ip"; then
+  if ! valid-ip "$ip"; then
     wlog "Invalid IP address: $ip"
     exit 1
   fi
