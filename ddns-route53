@@ -10,7 +10,7 @@ declare zone_id="$DDNS_ROUTE53_ZONE_ID"
 declare record_set="$DDNS_ROUTE53_RECORD_SET"
 declare handler_script="$DDNS_ROUTE53_SCRIPT"
 declare log_file
-declare ip_file
+declare state
 
 function errcho() {
   >&2 echo "$@"
@@ -71,7 +71,7 @@ function validate-arguments() {
 
 function setup-logging() {
   log_file="$log_dir/ddns-route53.log"
-  ip_file="$log_dir/ip"
+  state="$log_dir/ip"
   if [ ! -d "$log_dir" ]; then
     if ! mkdir -p "$log_dir" 2> /dev/null; then
       errcho "Failed to create log directory $log_dir"
@@ -91,12 +91,12 @@ function validate-ip() {
 }
 
 function maybe-update() {
-  if grep -Fxq "$ip" "$ip_file" 2> /dev/null; then
+  if grep -Fxq "$ip" "$state" 2> /dev/null; then
     wlog "Current IP == $ip, exiting"
     exit 0
   else
     local tmp_file old_ip output success
-    old_ip="$(cat "$ip_file" 2> /dev/null)"
+    old_ip="$(cat "$state" 2> /dev/null)"
     tmp_file=$(mktemp -t ddns-route53.XXXXXXXX)
     wlog "IP has changed from $old_ip to $ip, updating"
     cat > "$tmp_file" << EOF
@@ -122,7 +122,7 @@ EOF
     success=$?
     wlog "$output"
     if [ $success -eq 0 ]; then
-      echo "$ip" > "$ip_file"
+      echo "$ip" > "$state"
     fi
     rm "$tmp_file"
     maybe-run-handler "$old_ip" "$ip"
