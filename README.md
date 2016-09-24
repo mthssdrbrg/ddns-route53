@@ -16,7 +16,7 @@ well as usage of command line arguments and environment variables.
 ## Installation
 
 ```shell
-curl -sLO https://github.com/mthssdrbrg/ddns-route53/raw/master/ddns-route53
+curl -sLO https://github.com/mthssdrbrg/ddns-route53/raw/$VERSION/ddns-route53
 ```
 
 ## Usage
