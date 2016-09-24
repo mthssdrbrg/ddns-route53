@@ -112,10 +112,14 @@ function update-dns-entry() {
 EOF
   output=$(aws route53 change-resource-record-sets --hosted-zone-id "$zone_id" --change-batch "$batch" 2>&1)
   success=$?
-  log "$output"
   if (( success == 0 )); then
+    log "$output"
     echo "$ip" > "$STATE_PATH"
+  else
+    errlog "Failed to update DNS entry:"
+    errlog "$output"
   fi
+  return $success
 }
 
 function run-handler-script() {
@@ -132,8 +136,7 @@ function main() {
     exit 1
   fi
   if [[ "$old_ip" != "$ip" ]]; then
-    update-dns-entry "$ip"
-    run-handler-script "$old_ip" "$ip"
+    update-dns-entry "$ip" && run-handler-script "$old_ip" "$ip"
   else
     log "Current IP == $ip"
   fi
