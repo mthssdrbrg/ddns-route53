@@ -1,15 +1,15 @@
 #!/bin/bash
 
 declare -r DATE_FORMAT="%Y-%m-%d %H:%M:%S"
+declare -r STATE_PATH="/var/lib/ddns-route53/ip"
 declare -r VERSION="1.1.0"
-declare -r STATE_DIR="/var/lib/ddns-route53"
 declare ttl=${DDNS_ROUTE53_TTL:-300}
 declare record_type="${DDNS_ROUTE53_TYPE:-A}"
 declare comment="${DDNS_ROUTE53_COMMENT:-Updated at $(date +"$DATE_FORMAT")}"
 declare zone_id="$DDNS_ROUTE53_ZONE_ID"
 declare record_set="$DDNS_ROUTE53_RECORD_SET"
 declare handler_script="$DDNS_ROUTE53_SCRIPT"
-declare state
+declare old_ip ip
 
 function errcho() {
   >&2 echo "$@"
@@ -41,102 +41,27 @@ function valid-ip() {
   local ip result octets
   ip=$1
   result=1
-  if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-      OIFS=$IFS
-      IFS='.'
-      octets=($ip)
-      IFS=$OIFS
-      [[ ${octets[0]} -le 255 && ${octets[1]} -le 255 \
-          && ${octets[2]} -le 255 && ${octets[3]} -le 255 ]]
-      result=$?
+  if [[ "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    IFS='.' read -r -a octets <<< "$ip"
+    [[ ${octets[0]} -le 255 && ${octets[1]} -le 255 && ${octets[2]} -le 255 && ${octets[3]} -le 255 ]]
+    result=$?
   fi
   return $result
 }
 
-function validate-arguments() {
-  if [[ -z $zone_id ]]; then
-    errcho "Missing -z | --zone-id | \$DDNS_ROUTE53_ZONE_ID"
-    exit 1
-  elif [[ -z $record_set ]]; then
-    errcho "Missing -r | --record-set | \$DDNS_ROUTE53_RECORD_SET"
-    exit 1
-  fi
-  if [[ -n "$handler_script" && ! -x "$handler_script" ]]; then
-    errcho "Script at '$handler_script' is not executable"
-    exit 1
-  fi
-}
-
 function setup-state() {
-  if [[ ! -d "$STATE_DIR" ]]; then
-    if ! mkdir "$STATE_DIR" 2> /dev/null; then
-      errcho "Failed to create state directory '$STATE_DIR'"
-      exit 1
+  local state_dir
+  state_dir="$(dirname $STATE_PATH)"
+  if [[ ! -d "$state_dir" ]]; then
+    if ! mkdir "$state_dir" 2> /dev/null; then
+      errcho "Failed to create state directory '$state_dir'"
+      return 1
     fi
   fi
-  state="$STATE_DIR/ip"
 }
 
-function validate-ip() {
-  if [[ -z $ip ]]; then
-    ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
-  fi
-  if ! valid-ip "$ip"; then
-    log "Invalid IP address: $ip"
-    exit 1
-  fi
-}
-
-function maybe-update() {
-  if grep -Fxq "$ip" "$state" 2> /dev/null; then
-    log "Current IP == $ip, exiting"
-    exit 0
-  else
-    local tmp_file old_ip output success
-    old_ip="$(cat "$state" 2> /dev/null)"
-    tmp_file=$(mktemp -t ddns-route53.XXXXXXXX)
-    log "IP has changed from $old_ip to $ip, updating"
-    cat > "$tmp_file" << EOF
-    {
-      "Comment": "$comment",
-      "Changes": [
-        {
-          "Action": "UPSERT",
-          "ResourceRecordSet": {
-            "ResourceRecords": [
-              {"Value": "$ip"}
-            ],
-            "Name": "$record_set",
-            "Type": "$record_type",
-            "TTL": $ttl
-          }
-        }
-      ]
-    }
-EOF
-
-    output=$(aws route53 change-resource-record-sets --hosted-zone-id "$zone_id" --change-batch "file://$tmp_file" 2>&1)
-    success=$?
-    log "$output"
-    if [ $success -eq 0 ]; then
-      echo "$ip" > "$state"
-    fi
-    rm "$tmp_file"
-    maybe-run-handler "$old_ip" "$ip"
-  fi
-}
-
-function maybe-run-handler() {
-  if [[ -n "$handler_script" ]]; then
-    local old_ip new_ip
-    old_ip=$1
-    new_ip=$2
-    "$handler_script" "$old_ip" "$new_ip"
-  fi
-}
-
-function parse-argv() {
-  while [[ $# -gt 0 ]]; do
+function init-args() {
+  while (( $# > 0 )); do
     case "$1" in
       -z|--zone-id) zone_id="$2"; shift ;;
       -r|--record-set) record_set="$2"; shift ;;
@@ -152,24 +77,81 @@ function parse-argv() {
       --ttl=?*) ttl="${1#*=}" ;;
       --type=?*) record_type="${1#*=}" ;;
       --script=?*) handler_script="${1#*=}" ;;
-      *)
-        echo "Unkown option: $1"
-        usage
-        exit 1
-        ;;
+      *) errcho "Unkown option: $1"; usage; exit 1;;
     esac
     shift
   done
+  if [[ -z "$ip" ]]; then
+    ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+  fi
+  old_ip="$(cat $STATE_PATH 2> /dev/null)"
+}
+
+function validate-args() {
+  if [[ -z "$zone_id" ]]; then
+    errcho "Missing -z | --zone-id | \$DDNS_ROUTE53_ZONE_ID"
+    return 1
+  elif [[ -z "$record_set" ]]; then
+    errcho "Missing -r | --record-set | \$DDNS_ROUTE53_RECORD_SET"
+    return 1
+  elif [[ -n "$handler_script" && ! -x "$handler_script" ]]; then
+    errcho "Script at '$handler_script' is not executable"
+    return 1
+  fi
+}
+
+function update-dns-entry() {
+  local tmp_file output success ip
+  ip=$1
+  tmp_file=$(mktemp -t ddns-route53.XXXXXXXX)
+  cat > "$tmp_file" << EOF
+  {
+    "Comment": "$comment",
+    "Changes": [
+      {
+        "Action": "UPSERT",
+        "ResourceRecordSet": {
+          "ResourceRecords": [
+            {"Value": "$ip"}
+          ],
+          "Name": "$record_set",
+          "Type": "$record_type",
+          "TTL": $ttl
+        }
+      }
+    ]
+  }
+EOF
+  output=$(aws route53 change-resource-record-sets --hosted-zone-id "$zone_id" --change-batch "file://$tmp_file" 2>&1)
+  success=$?
+  log "$output"
+  if (( success == 0 )); then
+    echo "$ip" > "$STATE_PATH"
+  fi
+  rm -f "$tmp_file"
+}
+
+function run-handler-script() {
+  local old_ip new_ip
+  old_ip=$1
+  new_ip=$2
+  [[ -n "$handler_script" ]] && "$handler_script" "$old_ip" "$new_ip"
 }
 
 function main() {
-  parse-argv "$@"
-  validate-arguments
-  setup-state
-  validate-ip
-  maybe-update
+  setup-state || exit 1
+  init-args "$@"
+  validate-args || exit 1
+  if ! valid-ip "$ip"; then
+    log "Invalid IP address: '$ip'"
+    exit 1
+  fi
+  if [[ "$old_ip" != "$ip" ]]; then
+    update-dns-entry "$ip"
+    run-handler-script "$old_ip" "$ip"
+  else
+    log "Current IP == $ip"
+  fi
 }
 
 main "$@"
-
-exit 0
