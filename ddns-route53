@@ -38,9 +38,7 @@ HELP
 }
 
 function valid-ip() {
-  local ip result octets
-  ip=$1
-  result=1
+  local ip=$1 result=1 octets
   if [[ "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
     IFS='.' read -r -a octets <<< "$ip"
     [[ ${octets[0]} -le 255 && ${octets[1]} -le 255 && ${octets[2]} -le 255 && ${octets[3]} -le 255 ]]
@@ -101,8 +99,7 @@ function validate-args() {
 }
 
 function update-dns-entry() {
-  local tmp_file output success ip
-  ip=$1
+  local ip=$1 tmp_file output success
   tmp_file=$(mktemp -t ddns-route53.XXXXXXXX)
   cat > "$tmp_file" << EOF
   {
@@ -132,9 +129,7 @@ EOF
 }
 
 function run-handler-script() {
-  local old_ip new_ip
-  old_ip=$1
-  new_ip=$2
+  local old_ip=$1 new_ip=$2
   [[ -n "$handler_script" ]] && "$handler_script" "$old_ip" "$new_ip"
 }
 
