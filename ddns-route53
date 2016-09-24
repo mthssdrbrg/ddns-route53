@@ -92,6 +92,7 @@ function maybe-update() {
     wlog "Current IP == $IP, exiting"
     exit 0
   else
+    local TMP_FILE OLD_IP output success
     OLD_IP="$(cat "$IP_FILE" 2> /dev/null)"
     wlog "IP has changed from $OLD_IP to $IP, updating"
     TMP_FILE=$(mktemp -t ddns-route53.XXXXXXXX)
