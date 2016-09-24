@@ -167,10 +167,14 @@ function parse-argv() {
   done
 }
 
-parse-argv "$@"
-validate-arguments
-setup-logging
-validate-ip
-maybe-update
+function main() {
+  parse-argv "$@"
+  validate-arguments
+  setup-logging
+  validate-ip
+  maybe-update
+}
+
+main "$@"
 
 exit 0
