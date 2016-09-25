@@ -21,6 +21,26 @@ well as usage of command line arguments and environment variables.
 curl -sLO https://github.com/mthssdrbrg/ddns-route53/raw/$VERSION/ddns-route53
 ```
 
+The following IAM policy (or something similar) will have to be applied to an user or role.
+Unfortunately it's not possible to restrict access to specific resource record (yet), but
+a workaround is to create a "sub" hosted zone for a specific record.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "route53:ChangeResourceRecordSets",
+        "route53:ListResourceRecordSets"
+      ],
+      "Effect": "Allow",
+      "Resource": "arn:aws:route53:::hostedzone/EXAMPLE"
+    }
+  ]
+}
+```
+
 ## Usage
 
 ```shell
