@@ -38,13 +38,14 @@ HELP
 }
 
 function valid-ip() {
-  local ip=$1 result=1 octets
+  local ip=$1 octets
   if [[ "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
     IFS='.' read -r -a octets <<< "$ip"
-    [[ ${octets[0]} -le 255 && ${octets[1]} -le 255 && ${octets[2]} -le 255 && ${octets[3]} -le 255 ]]
-    result=$?
+    for octet in $octets; do
+      (( octet <= 255 )) || return 1
+    done
   fi
-  return $result
+  return 0
 }
 
 function setup-state() {
