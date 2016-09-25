@@ -143,6 +143,7 @@ function main() {
     exit 1
   fi
   if [[ "$old_ip" != "$ip" ]]; then
+    log "IP changed from '$old_ip' to '$ip', updating entry"
     update-dns-entry "$ip" && run-handler-script "$old_ip" "$ip"
   else
     log "Current IP == $ip"
