@@ -1,6 +1,7 @@
 # ddns-route53
 
 [![Build Status](https://travis-ci.org/mthssdrbrg/ddns-route53.svg?branch=master)](https://travis-ci.org/mthssdrbrg/ddns-route53)
+[![GitHub Release](https://img.shields.io/github/release/mthssdrbrg/ddns-route53.svg)]()
 
 Simple dynamic DNS updater script using Amazon Route53.
 
