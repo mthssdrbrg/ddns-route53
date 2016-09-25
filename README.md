@@ -12,6 +12,7 @@ well as usage of command line arguments and environment variables.
 
 * `bash`
 * `awscli`
+* `dig`
 
 ## Installation
 
@@ -22,12 +23,14 @@ curl -sLO https://github.com/mthssdrbrg/ddns-route53/raw/$VERSION/ddns-route53
 ## Usage
 
 ```shell
-$ ddns-route53 --zone-id=ZONE_ID --record-set=RECORD_SET
+$ ddns-route53 --zone-id <ZONE_ID> --record-set <RECORD_SET>
 ```
+
+> Note: long options on the form `--long-option=` are not supported.
 
 The above command assumes that the necessary environment variables for `awscli`
 are set, an A type record, a TTL of 300 seconds and will use
-`/var/log/ddns-route53` for storing logs and state.
+`/var/lib/ddns-route53` for storing state.
 
 See `ddns-route53 --help` for more information about command line arguments.
 
@@ -37,7 +40,6 @@ variables.
 
 * `DDNS_ROUTE53_TTL`: TTL for DNS record.
 * `DDNS_ROUTE53_TYPE`: DNS record type.
-* `DDNS_ROUTE53_LOG_DIR`: directory to store logs and state.
 * `DDNS_ROUTE53_COMMENT`: comment set when updating the Route53 record (only
   configurable as environment variable).
 * `DDNS_ROUTE53_ZONE_ID`: Amazon Route53 hosted zone ID.
