@@ -1,7 +1,6 @@
 #!/bin/bash
 
 declare -r DATE_FORMAT="%Y-%m-%d %H:%M:%S"
-declare -r STATE_PATH="/var/lib/ddns-route53/ip"
 declare -r VERSION="1.1.0"
 declare ttl=${DDNS_ROUTE53_TTL:-300}
 declare record_type="${DDNS_ROUTE53_TYPE:-A}"
@@ -48,16 +47,11 @@ function valid-ip() {
   return 0
 }
 
-function setup-state() {
-  local state_dir
-  state_dir="$(dirname $STATE_PATH)"
-  if [[ ! -d "$state_dir" ]]; then
-    if ! mkdir "$state_dir" 2> /dev/null; then
-      errlog "Failed to create state directory '$state_dir'"
-      return 1
-    fi
-  fi
-  return 0
+function fetch-current-ip() {
+  aws route53 list-resource-record-sets \
+    --hosted-zone-id "$zone_id" \
+    --output text \
+    --query "ResourceRecordSets[?Name == '$record_set.' && Type == '$record_type'].ResourceRecords[0].Value | [0] || ''"
 }
 
 function init-args() {
@@ -78,7 +72,7 @@ function init-args() {
   if [[ -z "$ip" ]]; then
     ip="$(dig +short myip.opendns.com @resolver1.opendns.com)"
   fi
-  old_ip="$(cat $STATE_PATH 2> /dev/null)"
+  old_ip="$(fetch-current-ip 2> /dev/null)"
   return 0
 }
 
@@ -121,7 +115,6 @@ EOF
   success=$?
   if (( success == 0 )); then
     log "$output"
-    echo "$ip" > "$STATE_PATH"
   else
     errlog "Failed to update DNS entry:"
     errlog "$output"
@@ -135,7 +128,6 @@ function run-handler-script() {
 }
 
 function main() {
-  setup-state || exit 1
   init-args "$@"
   validate-args || exit 1
   if ! valid-ip "$ip"; then
