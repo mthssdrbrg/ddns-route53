@@ -29,8 +29,7 @@ $ ddns-route53 --zone-id <ZONE_ID> --record-set <RECORD_SET>
 > Note: long options on the form `--long-option=` are not supported.
 
 The above command assumes that the necessary environment variables for `awscli`
-are set, an A type record, a TTL of 300 seconds and will use
-`/var/lib/ddns-route53` for storing state.
+are set, an A type record and a TTL of 300 seconds.
 
 See `ddns-route53 --help` for more information about command line arguments.
 
