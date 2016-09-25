@@ -57,6 +57,7 @@ function setup-state() {
       return 1
     fi
   fi
+  return 0
 }
 
 function init-args() {
@@ -78,6 +79,7 @@ function init-args() {
     ip="$(dig +short myip.opendns.com @resolver1.opendns.com)"
   fi
   old_ip="$(cat $STATE_PATH 2> /dev/null)"
+  return 0
 }
 
 function validate-args() {
@@ -94,6 +96,7 @@ function validate-args() {
     errlog "Unable to determine current IP address"
     return 1
   fi
+  return 0
 }
 
 function update-dns-entry() {
