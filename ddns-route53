@@ -148,6 +148,7 @@ function main() {
   else
     log "Current IP == $ip"
   fi
+  exit 0
 }
 
 main "$@"
