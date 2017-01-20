@@ -1,9 +1,10 @@
 language: bash
-sudo: required
 dist: trusty
-before_install:
-  - echo "deb http://archive.ubuntu.com/ubuntu/ trusty-backports universe" | sudo tee -a /etc/apt/sources.list
-  - sudo apt-get update -qq
-  - sudo apt-get install shellcheck -y
+addons:
+  apt:
+    sources:
+      - sourceline: "deb http://archive.ubuntu.com/ubuntu/ trusty-backports universe"
+    packages:
+      - shellcheck
 script:
   - shellcheck $(find . -maxdepth 1 -type f -executable)
