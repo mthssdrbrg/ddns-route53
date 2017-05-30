@@ -25,14 +25,14 @@ Usage: $(basename "$0") [OPTIONS]
 Dynamic DNS updater using Amazon Route53.
 
 Options:
-  -z, --zone-id=ZONE_ID         Amazon Route53 hosted zone ID (required)
-  -r, --record-set=RECORD_SET   Amazon Route53 record set name (required)
-  -t, --ttl=SECONDS             TTL for DNS record
-  -y, --type=A                  DNS record type
-  -i, --ip=IP_ADDRESS           Force usage of IP address
-  -s, --script=PATH             Path to script to execute on change
-  -h, --help                    You're looking at it
-  -v, --version                 Print version and exit
+  -z, --zone-id <ZONE_ID>         Amazon Route53 hosted zone ID (required)
+  -r, --record-set <RECORD_SET>   Amazon Route53 record set name (required)
+  -t, --ttl <SECONDS>             TTL for DNS record
+  -y, --type <TYPE>               DNS record type
+  -i, --ip <IP_ADDRESS>           Force usage of IP address
+  -s, --script <SCRIPT_PATH>      Path to script to execute on change
+  -h, --help                      You're looking at it
+  -v, --version                   Print version and exit
 HELP
 }
 
