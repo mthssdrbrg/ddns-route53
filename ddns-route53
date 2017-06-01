@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 declare -r DATE_FORMAT="%Y-%m-%d %H:%M:%S"
 declare -r VERSION="2.0.0"
