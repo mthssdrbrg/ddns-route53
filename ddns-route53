@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 declare -r DATE_FORMAT="%Y-%m-%d %H:%M:%S"
-declare -r VERSION="2.0.0"
+declare -r VERSION="2.0.1"
 declare ttl=${DDNS_ROUTE53_TTL:-300}
 declare record_type="${DDNS_ROUTE53_TYPE:-A}"
 declare comment="${DDNS_ROUTE53_COMMENT:-Updated at $(date +"$DATE_FORMAT")}"
