@@ -124,7 +124,7 @@ EOF
 
 function run-handler-script() {
   local old_ip=$1 new_ip=$2
-  [[ -n "$handler_script" ]] && "$handler_script" "$old_ip" "$new_ip"
+  [[ -z "$handler_script" ]] || "$handler_script" "$old_ip" "$new_ip"
 }
 
 function main() {
@@ -140,7 +140,7 @@ function main() {
   else
     log "Current IP == $ip"
   fi
-  exit 0
+  exit $?
 }
 
 main "$@"
