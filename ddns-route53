@@ -9,6 +9,7 @@ declare zone_id="$DDNS_ROUTE53_ZONE_ID"
 declare record_set="$DDNS_ROUTE53_RECORD_SET"
 declare handler_script="$DDNS_ROUTE53_SCRIPT"
 declare old_ip ip
+declare private=false
 
 function errlog() {
   echo "$@" >&2
@@ -28,6 +29,7 @@ Options:
   -z, --zone-id <ZONE_ID>         Amazon Route53 hosted zone ID (required)
   -r, --record-set <RECORD_SET>   Amazon Route53 record set name (required)
   -t, --ttl <SECONDS>             TTL for DNS record
+  -p, --private                   Private address lookup
   -y, --type <TYPE>               DNS record type
   -i, --ip <IP_ADDRESS>           Force usage of IP address
   -s, --script <SCRIPT_PATH>      Path to script to execute on change
@@ -61,6 +63,7 @@ function init-args() {
       -r|--record-set) record_set="$2"; shift ;;
       -i|--ip) ip="$2"; shift ;;
       -t|--ttl) ttl="$2"; shift ;;
+      -p|--private) private=true; shift ;;
       -y|--type) record_type="$2"; shift ;;
       -s|--script) handler_script="$2"; shift ;;
       -h|--help) usage; exit 0 ;;
@@ -70,7 +73,11 @@ function init-args() {
     shift
   done
   if [[ -z "$ip" ]]; then
-    ip="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+    if [[ $private == true ]]; then
+      ip="$(curl http://169.254.169.254/latest/meta-data/local-ipv4)"
+    else
+      ip="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+    fi
   fi
   old_ip="$(fetch-current-ip 2> /dev/null)"
   return 0
