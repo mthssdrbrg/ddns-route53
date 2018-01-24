@@ -29,7 +29,7 @@ Options:
   -z, --zone-id <ZONE_ID>         Amazon Route53 hosted zone ID (required)
   -r, --record-set <RECORD_SET>   Amazon Route53 record set name (required)
   -t, --ttl <SECONDS>             TTL for DNS record
-  -p, --private                   Private address lookup
+  -p, --private                   Private address lookup(ec2 only)
   -y, --type <TYPE>               DNS record type
   -i, --ip <IP_ADDRESS>           Force usage of IP address
   -s, --script <SCRIPT_PATH>      Path to script to execute on change
@@ -86,22 +86,35 @@ function init-args() {
 function validate-args() {
   if [[ -z "$zone_id" ]]; then
     errlog "Missing -z or --zone-id or \$DDNS_ROUTE53_ZONE_ID"
+    usage
     return 1
   elif [[ -z "$record_set" ]]; then
     errlog "Missing -r or --record-set or \$DDNS_ROUTE53_RECORD_SET"
+    usage
     return 1
   elif [[ -n "$handler_script" && ! -x "$handler_script" ]]; then
     errlog "Script at '$handler_script' is not executable"
+    usage
     return 1
   elif [[ -z "$ip" ]]; then
     errlog "Unable to determine current IP address"
+    usage
     return 1
   fi
   return 0
 }
 
 function update-dns-entry() {
-  local ip=$1 output success batch
+  local list=$1 output success batch
+  count=0
+  for ip in $list; do
+    if [[ $count -eq 0 ]]; then
+      value="{\"Value\": \"$ip\"}"
+    else
+      value="${value},{\"Value\": \"$ip\"}"
+    fi
+    ((count++))
+  done
   read -r -d '' batch << EOF
 {
   "Comment": "$comment",
@@ -109,7 +122,7 @@ function update-dns-entry() {
     {
       "Action": "UPSERT",
       "ResourceRecordSet": {
-        "ResourceRecords": [{"Value": "$ip"}],
+        "ResourceRecords": [$value],
         "Name": "$record_set",
         "Type": "$record_type",
         "TTL": $ttl
