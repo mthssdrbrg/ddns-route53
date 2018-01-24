@@ -86,19 +86,15 @@ function init-args() {
 function validate-args() {
   if [[ -z "$zone_id" ]]; then
     errlog "Missing -z or --zone-id or \$DDNS_ROUTE53_ZONE_ID"
-    usage
     return 1
   elif [[ -z "$record_set" ]]; then
     errlog "Missing -r or --record-set or \$DDNS_ROUTE53_RECORD_SET"
-    usage
     return 1
   elif [[ -n "$handler_script" && ! -x "$handler_script" ]]; then
     errlog "Script at '$handler_script' is not executable"
-    usage
     return 1
   elif [[ -z "$ip" ]]; then
     errlog "Unable to determine current IP address"
-    usage
     return 1
   fi
   return 0
