@@ -9,6 +9,7 @@ declare zone_id="$DDNS_ROUTE53_ZONE_ID"
 declare record_set="$DDNS_ROUTE53_RECORD_SET"
 declare handler_script="$DDNS_ROUTE53_SCRIPT"
 declare old_ip ip
+declare local_lookup=false
 
 function errlog() {
   echo "$@" >&2
@@ -30,6 +31,7 @@ Options:
   -t, --ttl <SECONDS>             TTL for DNS record
   -y, --type <TYPE>               DNS record type
   -i, --ip <IP_ADDRESS>           Force usage of IP address
+  -l, --local                     Do a local IP lookup instead of an external IP lookup.
   -s, --script <SCRIPT_PATH>      Path to script to execute on change
   -h, --help                      You're looking at it
   -v, --version                   Print version and exit
@@ -63,6 +65,7 @@ function init-args() {
       -t|--ttl) ttl="$2"; shift ;;
       -y|--type) record_type="$2"; shift ;;
       -s|--script) handler_script="$2"; shift ;;
+      -l|--local) local_lookup=true; shift ;;
       -h|--help) usage; exit 0 ;;
       -v|--version) echo "$VERSION"; exit 0 ;;
       *) errlog "Unknown option: $1"; usage; exit 1 ;;
@@ -70,7 +73,11 @@ function init-args() {
     shift
   done
   if [[ -z "$ip" ]]; then
-    ip="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+    if [[ $local_lookup == true ]]; then
+      ip="$(ip route get 8.8.8.8 | awk '{print $NF; exit}')"
+    else
+      ip="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+    fi
   fi
   old_ip="$(fetch-current-ip 2> /dev/null)"
   return 0
