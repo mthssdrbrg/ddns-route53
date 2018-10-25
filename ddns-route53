@@ -70,7 +70,7 @@ function init-args() {
     shift
   done
   if [[ -z "$ip" ]]; then
-    ip="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+    ip="$(dig +short -4 myip.opendns.com @resolver1.opendns.com)"
   fi
   old_ip="$(fetch-current-ip 2> /dev/null)"
   return 0
