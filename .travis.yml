@@ -1,10 +1,5 @@
-language: bash
-dist: trusty
-addons:
-  apt:
-    sources:
-      - sourceline: "deb http://archive.ubuntu.com/ubuntu/ trusty-backports universe"
-    packages:
-      - shellcheck
+language: shell
+dist: bionic
+
 script:
-  - shellcheck $(find . -maxdepth 1 -type f -executable)
+  - shellcheck ddns-route53
