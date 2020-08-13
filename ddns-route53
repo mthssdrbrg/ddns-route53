@@ -43,6 +43,8 @@ function valid-ip() {
     for octet in "${octets[@]}"; do
       (( octet <= 255 )) || return 1
     done
+  elif [[ "$ip" =~ ^[0-9a-fA-F:]\+$ ]]; then # Let's take the easy way out with validation of IPv6 addresses
+      return 1
   fi
   return 0
 }
@@ -70,7 +72,13 @@ function init-args() {
     shift
   done
   if [[ -z "$ip" ]]; then
-    ip="$(dig +short -4 myip.opendns.com @resolver1.opendns.com)"
+    if [[ $record_type = "AAAA" ]]; then
+      ip="$(dig +short -6 myip.opendns.com aaaa @resolver1.opendns.com)"
+    else
+      ip="$(dig +short -4 myip.opendns.com @resolver1.opendns.com)"
+    fi
+    # shellcheck disable=SC2181 # this is intentional
+    (( $? != 0 )) && ip=""
   fi
   old_ip="$(fetch-current-ip 2> /dev/null)"
   return 0
