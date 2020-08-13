@@ -1,8 +1,10 @@
 FROM python:3-alpine
 LABEL maintainer "Mathias Söderberg <mths@sdrbrg.se>"
 
+ENV AWSCLI_VERSION 1.18.119
+
 RUN apk --no-cache add bash bind-tools && \
-  pip install --no-cache-dir awscli==1.11.158
+  pip install --no-cache-dir awscli==${AWSCLI_VERSION}
 
 COPY ddns-route53 /usr/local/bin/ddns-route53
 
