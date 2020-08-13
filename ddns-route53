@@ -51,7 +51,7 @@ function fetch-current-ip() {
   aws route53 list-resource-record-sets \
     --hosted-zone-id "$zone_id" \
     --output text \
-    --query "ResourceRecordSets[?Name == '$record_set.' && Type == '$record_type'].ResourceRecords[0].Value | [0] || ''"
+    --query "ResourceRecordSets[?Name == '$record_set.' && Type == '$record_type'].ResourceRecords[0].Value"
 }
 
 function init-args() {
