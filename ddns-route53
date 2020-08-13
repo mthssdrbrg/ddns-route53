@@ -72,12 +72,12 @@ function init-args() {
     shift
   done
   if [[ -z "$ip" ]]; then
-    if [[ "$record_type" == "AAAA" ]]; then
+    if [[ $record_type = "AAAA" ]]; then
       ip="$(dig +short -6 myip.opendns.com aaaa @resolver1.opendns.com)"
     else
       ip="$(dig +short -4 myip.opendns.com @resolver1.opendns.com)"
     fi
-    (($? != 0)) && ip=""
+    (( $? != 0 )) && ip=""
   fi
   old_ip="$(fetch-current-ip 2> /dev/null)"
   return 0
