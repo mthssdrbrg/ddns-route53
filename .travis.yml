@@ -1,5 +1,0 @@
-language: shell
-dist: bionic
-
-script:
-  - shellcheck ddns-route53
